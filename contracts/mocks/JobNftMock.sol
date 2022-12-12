@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../IJobNft.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "popp-interfaces/IJobNFT.sol";
 
 contract JobNftMock is
-IJobNft,
+IJobNFT,
 ERC721
 {
     uint32 public employerId;

@@ -3,13 +3,13 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IJobNft.sol";
+import "popp-interfaces/IJobNFT.sol";
 
 contract Vesting is
 Ownable
 {
     IERC20 token;
-    IJobNft jobNFT;
+    IJobNFT jobNFT;
 
     struct VestingSchedule {
         uint32 employerId;
@@ -21,7 +21,7 @@ Ownable
     mapping(address => VestingSchedule) public vestingSchedules;
 
     constructor(address _jobNFTAddress) {
-        jobNFT = IJobNft(_jobNFTAddress);
+        jobNFT = IJobNFT(_jobNFTAddress);
     }
 
     function ERC20Vest(
