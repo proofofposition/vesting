@@ -1,0 +1,31 @@
+{
+  "name": "popp-protocol",
+  "version": "1.0.0",
+  "description": "The Smart Contracts for POPP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RingierIMU/popp-protocol.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/RingierIMU/popp-protocol/issues"
+  },
+  "homepage": "https://github.com/RingierIMU/popp-protocol#readme",
+  "devDependencies": {
+    "@gnosis.pm/mock-contract": "^4.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "chai": "^4.3.6",
+    "hardhat": "^2.10.1",
+    "hardhat-gas-reporter": "^1.0.9"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3",
+    "dotenv": "^16.0.2"
+  }
+}

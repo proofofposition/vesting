@@ -1,2 +1,3 @@
-# vesting
-Solidity contracts for vesting any ERC-20 token or ETH
+# POPP Vesting Contract
+This is a simple vesting contract that allows an employer to lock any ERC-20 token or ETH for a specified period of time. After the vesting schedule has been reached, the employee can withdraw the tokens if they're still employed (hold a valid POPP badge).
+The employer has the ability to cancel the vesting schedule at anytime after the employee no longer holds a valid POPP badge.
