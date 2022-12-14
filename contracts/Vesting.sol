@@ -9,7 +9,7 @@ contract Vesting is
 Ownable
 {
     IERC20 token;
-    IJobNFT jobNFT;
+    IJobNFT immutable jobNFT;
 
     struct VestingSchedule {
         uint32 employerId;
@@ -24,6 +24,13 @@ Ownable
         jobNFT = IJobNFT(_jobNFTAddress);
     }
 
+    /**
+    * @dev Creates a vesting schedule for a given employee and locks ERC20 tokens for a given time
+    * @param _erc20Address The ERC20 token address
+    * @param _employee The employee to create a vesting schedule for
+    * @param _total The total amount of tokens to vest
+    * @param _timestamp The timestamp to start vesting
+     **/
     function ERC20Vest(
         address _erc20Address,
         address _employee,
@@ -41,17 +48,17 @@ Ownable
         _vest(_erc20Address, _employee, _total, _timestamp);
     }
 
+    /**
+    * @dev Creates a vesting schedule for a given employee and locks ETH for a given time
+    * @param _employee The employee to create a vesting schedule for
+    * @param _timestamp The timestamp to start vesting
+     **/
     function ETHVest(
         address _employee,
-        uint256 _total,
         uint256 _timestamp
     ) public payable {
-        require(
-            msg.value == _total,
-            "Not enough ETH sent"
-        );
         // null address here means it's ETH
-        _vest(address(0), _employee, _total, _timestamp);
+        _vest(address(0), _employee, msg.value, _timestamp);
     }
 
     function _vest(
@@ -81,6 +88,9 @@ Ownable
         vestingSchedules[_employee] = vestingSchedule;
     }
 
+    /**
+    * @dev payout the vested amount of tokens to the employee
+    **/
     function payout() public {
         VestingSchedule memory vestingSchedule = vestingSchedules[msg.sender];
         require(
@@ -100,7 +110,7 @@ Ownable
         // avoid re-entry
         delete vestingSchedules[msg.sender];
 
-        if ( vestingSchedule.erc20Address == address(0) ) {
+        if (vestingSchedule.erc20Address == address(0)) {
             payable(msg.sender).transfer(vestingSchedule.total);
         } else {
             token = IERC20(vestingSchedule.erc20Address);
@@ -123,7 +133,7 @@ Ownable
         // avoid re-entry
         delete vestingSchedules[_to];
 
-        if ( vestingSchedule.erc20Address == address(0) ) {
+        if (vestingSchedule.erc20Address == address(0)) {
             payable(msg.sender).transfer(vestingSchedule.total);
         } else {
             token = IERC20(vestingSchedule.erc20Address);

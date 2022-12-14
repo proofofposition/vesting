@@ -9,7 +9,7 @@ async function main() {
   const VestingContract = await Vesting.deploy(
       '0x94Fc31D4cfccE7394fa1F35A390C8b85A6026836' // erc721
   );
-  console.log("Token address:", VestingContract.address);
+  console.log("Contract address:", VestingContract.address);
 }
 
 main()

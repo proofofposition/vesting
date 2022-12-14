@@ -13,7 +13,7 @@ ERC721
 
     event NewJob(address employee);
 
-    function canMintJob(string calldata uri, address minter) external view returns (bool){
+    function canMintJob(string memory _uri, address _minter, uint32 _employerTokenId) external view returns (bool){
         return true;
     }
 
@@ -26,8 +26,8 @@ ERC721
 
     constructor(string memory name, string memory symbol) ERC721('POPPNFT', 'POPPNFT') {}
 
-    function mint(address account, uint256 tokenId) public {
-        _mint(account, tokenId);
+    function mintFor(address employee) external{
+        _mint(employee, 1);
     }
 
     function burn(uint256 tokenId) public {

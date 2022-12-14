@@ -53,7 +53,6 @@ describe("🚩 Popp Vesting user flows", function () {
             it("Should be able to vest ETH", async function () {
                 await this.contract.ETHVest(
                     alice.address, // recipient
-                    100, // amount
                     123,
                     {value: 100}
                 );
@@ -63,18 +62,6 @@ describe("🚩 Popp Vesting user flows", function () {
                 expect(vestingSchedule.erc20Address).to.equal(ethers.constants.AddressZero);
                 expect(vestingSchedule.total).to.equal(100);
                 expect(vestingSchedule.timestamp).to.equal(123);
-            });
-
-            it("Should fail if the user has not sent enough ETH", async function () {
-                await expect(
-                    this.contract
-                        .ETHVest(
-                            alice.address, // recipient
-                            1000, // amount is too high
-                            123,
-                            {value: 100}
-                        )
-                ).to.be.revertedWith("Not enough ETH sent");
             });
         });
 
@@ -103,17 +90,17 @@ describe("🚩 Popp Vesting user flows", function () {
             });
 
             it("Should fail if the user has insufficient approved ERC-20", async function () {
-            await expect(
-                this.contract
-                    .connect(bob)
-                    .ERC20Vest(
-                        this.token.address, // token address
-                        alice.address, // recipient
-                        1000, // amount is too high
-                        123,
-                    )
-            ).to.be.revertedWith("ERC20: insufficient allowance");
-        });
+                await expect(
+                    this.contract
+                        .connect(bob)
+                        .ERC20Vest(
+                            this.token.address, // token address
+                            alice.address, // recipient
+                            1000, // amount is too high
+                            123,
+                        )
+                ).to.be.revertedWith("ERC20: insufficient allowance");
+            });
         });
 
         describe("payout()", function () {
@@ -122,7 +109,6 @@ describe("🚩 Popp Vesting user flows", function () {
 
                 await this.contract.ETHVest(
                     alice.address, // recipient
-                    ethers.utils.parseEther("10"), // amount
                     123,
                     {value: ethers.utils.parseEther("10")}
                 );
@@ -162,7 +148,6 @@ describe("🚩 Popp Vesting user flows", function () {
             it("Should be not able to payout if your schedule is not in the past", async function () {
                 await this.contract.ETHVest(
                     alice.address, // recipient
-                    ethers.utils.parseEther("10"), // amount
                     99999999999, // timestamp is in the future
                     {value: ethers.utils.parseEther("10")}
                 );
@@ -198,7 +183,6 @@ describe("🚩 Popp Vesting user flows", function () {
                 let startingBalance = await ethers.provider.getBalance(owner.address);
                 await this.contract.ETHVest(
                     alice.address, // recipient
-                    ethers.utils.parseEther("10"), // amount
                     123,
                     {value: ethers.utils.parseEther("10")}
                 );
@@ -214,7 +198,6 @@ describe("🚩 Popp Vesting user flows", function () {
             it("Should not be able to cancel if employer is still employed", async function () {
                 await this.contract.ETHVest(
                     alice.address, // recipient
-                    ethers.utils.parseEther("10"), // amount
                     123,
                     {value: ethers.utils.parseEther("10")}
                 );
