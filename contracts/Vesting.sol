@@ -25,6 +25,7 @@ Ownable
     }
 
     receive() external payable {}
+
     fallback() external payable {}
 
     /**
@@ -40,6 +41,8 @@ Ownable
         uint256 _total,
         uint256 _timestamp
     ) public {
+        _vest(_erc20Address, _employee, _total, _timestamp);
+
         token = IERC20(_erc20Address);
 
         token.transferFrom(
@@ -47,8 +50,6 @@ Ownable
             address(this),
             _total
         );
-
-        _vest(_erc20Address, _employee, _total, _timestamp);
     }
 
     /**
@@ -114,7 +115,7 @@ Ownable
         delete vestingSchedules[msg.sender];
 
         if (vestingSchedule.erc20Address == address(0)) {
-            (bool sent,) = payable(msg.sender).call{value: vestingSchedule.total}("");
+            (bool sent,) = payable(msg.sender).call{value : vestingSchedule.total}("");
             require(sent, "Failed to send Ether");
         } else {
             token = IERC20(vestingSchedule.erc20Address);
@@ -137,7 +138,7 @@ Ownable
         delete vestingSchedules[_to];
 
         if (vestingSchedule.erc20Address == address(0)) {
-            (bool sent,) = payable(msg.sender).call{value: vestingSchedule.total}("");
+            (bool sent,) = payable(msg.sender).call{value : vestingSchedule.total}("");
             require(sent, "Failed to send Ether");
         } else {
             token = IERC20(vestingSchedule.erc20Address);
