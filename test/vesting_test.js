@@ -70,9 +70,15 @@ describe("🚩 Popp Vesting user flows", function () {
 
                 // transfer a starting balance to alice
                 await this.token.connect(owner).transfer(alice.address, 100);
+                // alice's ERC-20 balance
                 expect(await this.token.balanceOf(alice.address)).to.equal(
                     "100"
                 );
+                // the contract's ERC-20 balance
+                expect(await this.token.balanceOf(this.contract.address)).to.equal(
+                    "0"
+                );
+
                 await this.token.connect(alice).approve(this.contract.address, 10)
 
                 await this.contract.connect(alice).ERC20Vest(
@@ -80,6 +86,13 @@ describe("🚩 Popp Vesting user flows", function () {
                     bob.address, // recipient
                     10, // amount
                     123
+                );
+                expect(await this.token.balanceOf(this.contract.address)).to.equal(
+                    "10"
+                );
+                // alice's ERC-20 balance
+                expect(await this.token.balanceOf(alice.address)).to.equal(
+                    "90"
                 );
 
                 let vestingSchedule = await this.contract.connect(bob).getMyVestingSchedule();
