@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -23,6 +23,9 @@ Ownable
     constructor(address _jobNFTAddress) {
         jobNFT = IJobNFT(_jobNFTAddress);
     }
+
+    receive() external payable {}
+    fallback() external payable {}
 
     /**
     * @dev Creates a vesting schedule for a given employee and locks ERC20 tokens for a given time
@@ -107,11 +110,12 @@ Ownable
             vestingSchedule.employerId == getEmployerIdFromEmployee(msg.sender),
             "You are not employed by this employer"
         );
-        // avoid re-entry
+
         delete vestingSchedules[msg.sender];
 
         if (vestingSchedule.erc20Address == address(0)) {
-            payable(msg.sender).transfer(vestingSchedule.total);
+            (bool sent,) = payable(msg.sender).call{value: vestingSchedule.total}("");
+            require(sent, "Failed to send Ether");
         } else {
             token = IERC20(vestingSchedule.erc20Address);
             token.transfer(msg.sender, vestingSchedule.total);
@@ -130,11 +134,11 @@ Ownable
             "Address is still employed"
         );
 
-        // avoid re-entry
         delete vestingSchedules[_to];
 
         if (vestingSchedule.erc20Address == address(0)) {
-            payable(msg.sender).transfer(vestingSchedule.total);
+            (bool sent,) = payable(msg.sender).call{value: vestingSchedule.total}("");
+            require(sent, "Failed to send Ether");
         } else {
             token = IERC20(vestingSchedule.erc20Address);
             token.transfer(msg.sender, vestingSchedule.total);
