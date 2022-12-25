@@ -3,12 +3,14 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "popp-interfaces/IEmployerSft.sol";
 import "popp-interfaces/IJobNFT.sol";
 
 contract Vesting is
 Ownable
 {
     IERC20 token;
+    IEmployerSft immutable employerSft;
     IJobNFT immutable jobNFT;
 
     struct VestingSchedule {
@@ -18,9 +20,10 @@ Ownable
         uint256 timestamp;
     }
 
-    mapping(address => VestingSchedule) public vestingSchedules;
+    mapping(address => mapping(uint256 => VestingSchedule)) public vestingSchedules;
 
-    constructor(address _jobNFTAddress) {
+    constructor(address _jobNFTAddress, address _IEmployerSftAddress) {
+        employerSft = IEmployerSft(_IEmployerSftAddress);
         jobNFT = IJobNFT(_jobNFTAddress);
     }
 
@@ -29,7 +32,8 @@ Ownable
     fallback() external payable {}
 
     /**
-    * @dev Creates a vesting schedule for a given employee and locks ERC20 tokens for a given time
+    * @dev Creates a vesting schedule for a given employee and locks ERC20 tokens for a given time.
+    * This schedule is mapped to the employee current job for a given employer
     * @param _erc20Address The ERC20 token address
     * @param _employee The employee to create a vesting schedule for
     * @param _total The total amount of tokens to vest
@@ -44,6 +48,7 @@ Ownable
         _vest(_erc20Address, _employee, _total, _timestamp);
 
         token = IERC20(_erc20Address);
+        token.approve(address(this), _total);
 
         token.transferFrom(
             msg.sender,
@@ -65,21 +70,38 @@ Ownable
         _vest(address(0), _employee, msg.value, _timestamp);
     }
 
+    /**
+    * @dev Creates a vesting schedule for a given employee and locks ERC20 tokens for a given time.
+    * This schedule is mapped to the employee current job for a given employer
+    * @param _erc20Address The ERC20 token address
+    * @param _employee The employee to create a vesting schedule for
+    * @param _total The total amount of tokens to vest
+    * @param _timestamp The timestamp to start vesting
+     **/
     function _vest(
         address _erc20Address,
         address _employee,
         uint256 _total,
         uint256 _timestamp
     ) internal {
-        uint32 employerId = getEmployerIdFromEmployee(_employee);
         require(
             _total > 0,
             "Total cannot be 0"
         );
 
+        // here we determine the job id from the employer id (an employee can only hold one job nft per employer)
+        uint32 employerId = employerSft.employerIdFromWallet(msg.sender);
+
         require(
             employerId != 0,
-            "Employee has no employer"
+            "You need to be verified as an employer to create a vesting schedule"
+        );
+
+        uint256 jobId = jobNFT.getJobIdFromEmployeeAndEmployer(msg.sender, employerId);
+
+        require(
+            jobId != 0,
+            "The given address doesn't work for your employer"
         );
 
         VestingSchedule memory vestingSchedule = VestingSchedule(
@@ -89,14 +111,17 @@ Ownable
             _timestamp
         );
 
-        vestingSchedules[_employee] = vestingSchedule;
+        vestingSchedules[_employee][jobId] = vestingSchedule;
     }
 
     /**
     * @dev payout the vested amount of tokens to the employee
+    * @param _jobId The job id associated with the vesting schedule
     **/
-    function payout() public {
-        VestingSchedule memory vestingSchedule = vestingSchedules[msg.sender];
+    function payout(uint256 _jobId) public {
+        address employee = msg.sender;
+        VestingSchedule memory vestingSchedule = vestingSchedules[employee][_jobId];
+
         require(
             vestingSchedule.total > 0,
             "Vesting schedule not found"
@@ -108,34 +133,41 @@ Ownable
         );
 
         require(
-            vestingSchedule.employerId == getEmployerIdFromEmployee(msg.sender),
-            "You are not employed by this employer"
+            _jobId == jobNFT.getJobIdFromEmployeeAndEmployer(employee, vestingSchedule.employerId),
+            "Address is not employed thus cannot be paid"
         );
 
-        delete vestingSchedules[msg.sender];
+        delete vestingSchedules[employee][_jobId];
 
         if (vestingSchedule.erc20Address == address(0)) {
-            (bool sent,) = payable(msg.sender).call{value : vestingSchedule.total}("");
+            (bool sent,) = payable(employee).call{value : vestingSchedule.total}("");
             require(sent, "Failed to send Ether");
         } else {
             token = IERC20(vestingSchedule.erc20Address);
-            token.transfer(msg.sender, vestingSchedule.total);
+            token.transfer(employee, vestingSchedule.total);
         }
     }
 
-    function cancel(address _to) public {
-        VestingSchedule memory vestingSchedule = vestingSchedules[_to];
+    function cancel(address _to, uint256 _jobId) public {
+        address employer = msg.sender;
+        VestingSchedule memory vestingSchedule = vestingSchedules[_to][_jobId];
+
         require(
             vestingSchedule.total > 0,
             "Vesting schedule not found"
         );
 
         require(
-            vestingSchedule.employerId != getEmployerIdFromEmployee(_to),
-            "Address is still employed"
+            _jobId != jobNFT.getJobIdFromEmployeeAndEmployer(_to, vestingSchedule.employerId),
+            "Address is still employed, thus cannot be cancelled"
         );
 
-        delete vestingSchedules[_to];
+        require(
+            vestingSchedule.employerId == employerSft.employerIdFromWallet(employer),
+            "Vesting schedule not found"
+        );
+
+        delete vestingSchedules[_to][_jobId];
 
         if (vestingSchedule.erc20Address == address(0)) {
             (bool sent,) = payable(msg.sender).call{value : vestingSchedule.total}("");
@@ -146,11 +178,7 @@ Ownable
         }
     }
 
-    function getEmployerIdFromEmployee(address _address) public view returns (uint32) {
-        return jobNFT.getEmployerIdFromJobId(jobNFT.getJobIdFromEmployee(_address));
-    }
-
-    function getMyVestingSchedule() external view returns (VestingSchedule memory) {
-        return vestingSchedules[msg.sender];
+    function getMyVestingSchedule(uint256 _jobId) external view returns (VestingSchedule memory) {
+        return vestingSchedules[msg.sender][_jobId];
     }
 }
