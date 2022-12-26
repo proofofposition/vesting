@@ -132,8 +132,9 @@ Ownable
             "Vesting period has not passed"
         );
 
+        // this to ensure the employee is still working for the given employer
         require(
-            _jobId == jobNFT.getJobIdFromEmployeeAndEmployer(employee, vestingSchedule.employerId),
+            jobNFT.getJobIdFromEmployeeAndEmployer(employee, vestingSchedule.employerId) > 0,
             "Address is not employed thus cannot be paid"
         );
 

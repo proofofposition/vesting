@@ -182,8 +182,8 @@ describe("🚩 Popp Vesting user flows", function () {
                     10, // amount
                     123
                 );
-                // mock a change of job here
-                await this.nft.setJobId(2);
+                // mock a change of job here, the employee has no nfts for this employer
+                await this.nft.setJobId(0);
 
                 await expect(
                     this.contract
