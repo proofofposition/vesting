@@ -64,6 +64,16 @@ describe("🚩 Popp Vesting user flows", function () {
                 expect(vestingSchedule.erc20Address).to.equal(ethers.constants.AddressZero);
                 expect(vestingSchedule.total).to.equal(100);
                 expect(vestingSchedule.timestamp).to.equal(123);
+
+                await expect(
+                    this.contract
+                        .ETHVest(
+                            alice.address, // recipient
+                            123,
+                            {value: 100}
+                        )
+                ).to.be.revertedWith("The employee already has a vesting schedule for this job");
+
             });
         });
 

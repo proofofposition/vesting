@@ -40,7 +40,8 @@ Ownable
 
     /**
     * @dev Creates a vesting schedule for a given employee and locks ERC20 tokens for a given time.
-    * This schedule is mapped to the employee current job for a given employer
+    * This schedule is mapped to the employee current job for a given employer.
+    * Note: sender has to grant approval to this contract before using this function
     * @param _erc20Address The ERC20 token address
     * @param _employee The employee to create a vesting schedule for
     * @param _total The total amount of tokens to vest
@@ -55,7 +56,6 @@ Ownable
         _vest(_erc20Address, _employee, _total, _timestamp);
 
         token = IERC20(_erc20Address);
-        token.approve(address(this), _total);
 
         token.transferFrom(
             msg.sender,
@@ -96,7 +96,6 @@ Ownable
             "Total cannot be 0"
         );
 
-        // here we determine the job id from the employer id (an employee can only hold one job nft per employer)
         uint32 employerId = employerSft.employerIdFromWallet(msg.sender);
 
         require(
@@ -104,11 +103,17 @@ Ownable
             "You need to be verified as an employer to create a vesting schedule"
         );
 
+        // here we determine the job id from the employer id (an employee can only hold one job nft per employer)
         uint256 jobId = jobNFT.getJobIdFromEmployeeAndEmployer(msg.sender, employerId);
 
         require(
             jobId != 0,
             "The given address doesn't work for your employer"
+        );
+
+        require(
+            hasVestingSchedule(_employee, jobId) == false,
+            "The employee already has a vesting schedule for this job"
         );
 
         VestingSchedule memory vestingSchedule = VestingSchedule(
@@ -207,5 +212,14 @@ Ownable
     **/
     function getVestingSchedule(address _employee, uint256 _jobId) external view returns (VestingSchedule memory) {
         return vestingSchedules[_employee][_jobId];
+    }
+
+    /**
+    * @dev checks if given employee already has a vesting schedule for a given job id
+    * @param _employee The employee to check
+    * @param _jobId The job id to check
+    **/
+    function hasVestingSchedule(address _employee, uint256 _jobId) public view returns (bool) {
+        return vestingSchedules[_employee][_jobId].total > 0;
     }
 }
