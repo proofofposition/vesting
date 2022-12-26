@@ -6,12 +6,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "popp-interfaces/IEmployerSft.sol";
 import "popp-interfaces/IJobNFT.sol";
 
+// Desired Features
+// - Allow an employer to lock ERC20 tokens for an employee for a period of time
+// - Allow an employer to lock ETH for an employee for a period of time
+// - After the lock period, the employee can withdraw the tokens/ETH
+// - If the employee no longer works for the employer, the employer can withdraw the tokens/ETH
+// - a way of viewing a particular employee's vesting schedule
+// - a way of viewing the sender's vesting schedule
 contract Vesting is
 Ownable
 {
-    IERC20 token;
-    IEmployerSft immutable employerSft;
-    IJobNFT immutable jobNFT;
+    IERC20 private token;
+    IEmployerSft private immutable employerSft;
+    IJobNFT private immutable jobNFT;
 
     struct VestingSchedule {
         uint32 employerId;
@@ -20,7 +27,7 @@ Ownable
         uint256 timestamp;
     }
 
-    mapping(address => mapping(uint256 => VestingSchedule)) public vestingSchedules;
+    mapping(address => mapping(uint256 => VestingSchedule)) private vestingSchedules;
 
     constructor(address _jobNFTAddress, address _IEmployerSftAddress) {
         employerSft = IEmployerSft(_IEmployerSftAddress);
@@ -149,9 +156,15 @@ Ownable
         }
     }
 
-    function cancel(address _to, uint256 _jobId) public {
+    /**
+    * @dev an employer can cancel a vesting schedule when the employee no longer works for them.
+    * Note: this can only happen if the given employee is no longer employed by the given employer
+    * @param _employee The employee for which to cancel the vesting schedule
+    * @param _jobId The job id associated with the vesting schedule
+    **/
+    function cancel(address _employee, uint256 _jobId) public {
         address employer = msg.sender;
-        VestingSchedule memory vestingSchedule = vestingSchedules[_to][_jobId];
+        VestingSchedule memory vestingSchedule = vestingSchedules[_employee][_jobId];
 
         require(
             vestingSchedule.total > 0,
@@ -159,7 +172,7 @@ Ownable
         );
 
         require(
-            _jobId != jobNFT.getJobIdFromEmployeeAndEmployer(_to, vestingSchedule.employerId),
+            _jobId != jobNFT.getJobIdFromEmployeeAndEmployer(_employee, vestingSchedule.employerId),
             "Address is still employed, thus cannot be cancelled"
         );
 
@@ -168,7 +181,7 @@ Ownable
             "Vesting schedule not found"
         );
 
-        delete vestingSchedules[_to][_jobId];
+        delete vestingSchedules[_employee][_jobId];
 
         if (vestingSchedule.erc20Address == address(0)) {
             (bool sent,) = payable(msg.sender).call{value : vestingSchedule.total}("");
@@ -179,7 +192,20 @@ Ownable
         }
     }
 
+    /**
+    * @dev returns the vesting schedule for the sender and job id
+    * @param _jobId The job id associated with the vesting schedule
+    **/
     function getMyVestingSchedule(uint256 _jobId) external view returns (VestingSchedule memory) {
         return vestingSchedules[msg.sender][_jobId];
+    }
+
+    /**
+    * @dev returns the vesting schedule for a given employee and job id
+    * @param _employee The employee to create a vesting schedule for
+    * @param _jobId The job id associated with the vesting schedule
+    **/
+    function getVestingSchedule(address _employee, uint256 _jobId) external view returns (VestingSchedule memory) {
+        return vestingSchedules[_employee][_jobId];
     }
 }
