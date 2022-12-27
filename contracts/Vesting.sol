@@ -146,7 +146,7 @@ Ownable
 
         // this to ensure the employee is still working for the given employer
         require(
-            jobNFT.getJobIdFromEmployeeAndEmployer(employee, vestingSchedule.employerId) > 0,
+            jobNFT.isEmployedBy(employee, vestingSchedule.employerId),
             "Address is not employed thus cannot be paid"
         );
 

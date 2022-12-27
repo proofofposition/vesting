@@ -53,4 +53,9 @@ ERC721
     function getJobIdFromEmployeeAndEmployer(address, uint32) external view returns (uint256) {
         return jobId;
     }
+
+    function isEmployedBy(address _employee, uint32 _employerId) external view returns (bool) {
+        // to allow mocking
+        return employerId != 2;
+    }
 }
